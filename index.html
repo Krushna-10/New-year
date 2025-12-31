@@ -6,15 +6,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-html, body {
+/* ===== BACKGROUND ===== */
+body {
   margin: 0;
-  padding: 0;
-  height: 100%;
-  background: radial-gradient(circle at bottom, #0a0a0a, #000);
+  height: 100vh;
   overflow: hidden;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: system-ui, sans-serif;
+  background: linear-gradient(
+    120deg,
+    #ff0080,
+    #7928ca,
+    #00e0ff,
+    #00ff9d
+  );
+  background-size: 400% 400%;
+  animation: gradientMove 18s ease infinite;
 }
 
+@keyframes gradientMove {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ===== TIMER ===== */
 #timer {
   position: absolute;
   top: 50%;
@@ -22,22 +37,27 @@ html, body {
   transform: translateY(-50%);
   text-align: center;
   font-size: clamp(2rem, 5vw, 4rem);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.15em;
-  background: linear-gradient(90deg, #ff0080, #00e0ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 20px rgba(255,255,255,0.4);
+  color: white;
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.6),
+    0 0 25px rgba(255,255,255,0.4);
   animation: pulse 2s ease-in-out infinite;
+  z-index: 2;
 }
 
 @keyframes pulse {
   0%,100% { opacity: 1 }
-  50% { opacity: 0.7 }
+  50% { opacity: 0.75 }
 }
 
+/* ===== CANVAS ===== */
 canvas {
+  position: absolute;
+  inset: 0;
   display: none;
+  z-index: 1;
 }
 </style>
 </head>
@@ -91,7 +111,7 @@ function startFireworks() {
   const particles = [];
   const points = [];
 
-  /* --- Build text mask --- */
+  /* --- Text mask --- */
   const textCanvas = document.createElement("canvas");
   const tctx = textCanvas.getContext("2d");
   textCanvas.width = canvas.width;
@@ -108,13 +128,10 @@ function startFireworks() {
   for (let y = 0; y < canvas.height; y += 6) {
     for (let x = 0; x < canvas.width; x += 6) {
       const i = (y * canvas.width + x) * 4;
-      if (img[i] > 200) {
-        points.push({ x, y });
-      }
+      if (img[i] > 200) points.push({ x, y });
     }
   }
 
-  /* --- Firework explosion --- */
   function explode(x, y) {
     const hue = Math.random() * 360;
     for (let i = 0; i < 28; i++) {
@@ -133,7 +150,7 @@ function startFireworks() {
   let index = 0;
 
   function loop() {
-    ctx.fillStyle = "rgba(0,0,0,0.18)";
+    ctx.fillStyle = "rgba(0,0,0,0.15)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     if (index < points.length) {
