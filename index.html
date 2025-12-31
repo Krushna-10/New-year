@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>New Year Countdown</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: black;
+  color: white;
+  font-family: monospace;
+  overflow: hidden;
+}
+
+#timer {
+  position: absolute;
+  top: 40%;
+  width: 100%;
+  text-align: center;
+  font-size: 2.5rem;
+}
+
+canvas {
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="timer">Loading…</div>
+<canvas id="canvas"></canvas>
+
+<script>
+/* ===== TIMER ===== */
+const timerEl = document.getElementById("timer");
+const target = new Date("January 1, 2026 00:00:00").getTime();
+
+const tick = setInterval(() => {
+  const now = Date.now();
+  const diff = target - now;
+
+  if (diff <= 0) {
+    clearInterval(tick);
+    timerEl.style.display = "none";
+    startFireworks();
+    return;
+  }
+
+  const s = Math.floor(diff / 1000) % 60;
+  const m = Math.floor(diff / (1000 * 60)) % 60;
+  const h = Math.floor(diff / (1000 * 60 * 60)) % 24;
+  const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+  timerEl.textContent = `${d}d ${h}h ${m}m ${s}s`;
+}, 1000);
+
+/* ===== FIREWORKS ===== */
+function startFireworks() {
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.style.display = "block";
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  const particles = [];
+
+  function spawn() {
+    const x = Math.random() * canvas.width;
+    const y = Math.random() * canvas.height / 2;
+
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        x,
+        y,
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 0.5) * 6,
+        life: 100
+      });
+    }
+  }
+
+  function loop() {
+    ctx.fillStyle = "rgba(0,0,0,0.2)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.05;
+      p.life--;
+
+      ctx.fillStyle = "hsl(" + Math.random() * 360 + ",100%,50%)";
+      ctx.fillRect(p.x, p.y, 2, 2);
+    });
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      if (particles[i].life <= 0) particles.splice(i, 1);
+    }
+
+    if (Math.random() < 0.05) spawn();
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+}
+</script>
+
+</body>
+</html>
