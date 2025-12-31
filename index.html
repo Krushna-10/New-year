@@ -2,25 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>New Year Countdown</title>
+<title>New Year 2026 Countdown</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 html, body {
   margin: 0;
   padding: 0;
-  background: black;
-  color: white;
-  font-family: monospace;
+  height: 100%;
+  background: radial-gradient(circle at bottom, #0a0a0a, #000);
   overflow: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 #timer {
   position: absolute;
-  top: 40%;
+  top: 50%;
   width: 100%;
+  transform: translateY(-50%);
   text-align: center;
-  font-size: 2.5rem;
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  background: linear-gradient(90deg, #ff0080, #00e0ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(255,255,255,0.4);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1 }
+  50% { opacity: 0.7 }
 }
 
 canvas {
@@ -35,78 +48,116 @@ canvas {
 <canvas id="canvas"></canvas>
 
 <script>
-/* ===== TIMER ===== */
+/* ===== COUNTDOWN ===== */
 const timerEl = document.getElementById("timer");
-const target = new Date("January 1, 2026 00:00:00").getTime();
+const target = Date.UTC(2026, 0, 1, 0, 0, 0);
 
-const tick = setInterval(() => {
-  const now = Date.now();
-  const diff = target - now;
+function updateTimer() {
+  const diff = target - Date.now();
 
   if (diff <= 0) {
-    clearInterval(tick);
     timerEl.style.display = "none";
     startFireworks();
     return;
   }
 
   const s = Math.floor(diff / 1000) % 60;
-  const m = Math.floor(diff / (1000 * 60)) % 60;
-  const h = Math.floor(diff / (1000 * 60 * 60)) % 24;
-  const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const m = Math.floor(diff / 60000) % 60;
+  const h = Math.floor(diff / 3600000) % 24;
+  const d = Math.floor(diff / 86400000);
 
-  timerEl.textContent = `${d}d ${h}h ${m}m ${s}s`;
-}, 1000);
+  timerEl.textContent =
+    `${d}d ${String(h).padStart(2,"0")}h `
+  + `${String(m).padStart(2,"0")}m `
+  + `${String(s).padStart(2,"0")}s`;
 
-/* ===== FIREWORKS ===== */
+  requestAnimationFrame(updateTimer);
+}
+updateTimer();
+
+/* ===== FIREWORKS : "2026" ===== */
 function startFireworks() {
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
   canvas.style.display = "block";
 
   function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
   }
   resize();
-  window.addEventListener("resize", resize);
+  addEventListener("resize", resize);
 
   const particles = [];
+  const points = [];
 
-  function spawn() {
-    const x = Math.random() * canvas.width;
-    const y = Math.random() * canvas.height / 2;
+  /* --- Build text mask --- */
+  const textCanvas = document.createElement("canvas");
+  const tctx = textCanvas.getContext("2d");
+  textCanvas.width = canvas.width;
+  textCanvas.height = canvas.height;
 
-    for (let i = 0; i < 80; i++) {
+  tctx.fillStyle = "#fff";
+  tctx.textAlign = "center";
+  tctx.textBaseline = "middle";
+  tctx.font = `bold ${Math.min(canvas.width * 0.6, 520)}px sans-serif`;
+  tctx.fillText("2026", canvas.width / 2, canvas.height / 2);
+
+  const img = tctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+  for (let y = 0; y < canvas.height; y += 6) {
+    for (let x = 0; x < canvas.width; x += 6) {
+      const i = (y * canvas.width + x) * 4;
+      if (img[i] > 200) {
+        points.push({ x, y });
+      }
+    }
+  }
+
+  /* --- Firework explosion --- */
+  function explode(x, y) {
+    const hue = Math.random() * 360;
+    for (let i = 0; i < 28; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = Math.random() * 3 + 1.5;
       particles.push({
-        x,
-        y,
-        vx: (Math.random() - 0.5) * 6,
-        vy: (Math.random() - 0.5) * 6,
-        life: 100
+        x, y,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s,
+        life: 90,
+        color: `hsl(${hue},100%,60%)`
       });
     }
   }
 
+  let index = 0;
+
   function loop() {
-    ctx.fillStyle = "rgba(0,0,0,0.2)";
+    ctx.fillStyle = "rgba(0,0,0,0.18)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    particles.forEach(p => {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.05;
-      p.life--;
-
-      ctx.fillStyle = "hsl(" + Math.random() * 360 + ",100%,50%)";
-      ctx.fillRect(p.x, p.y, 2, 2);
-    });
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-      if (particles[i].life <= 0) particles.splice(i, 1);
+    if (index < points.length) {
+      explode(points[index].x, points[index].y);
+      index += 2;
     }
 
-    if (Math.random() < 0.05) spawn();
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.03;
+      p.life--;
+
+      ctx.globalAlpha = p.life / 90;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    ctx.globalAlpha = 1;
     requestAnimationFrame(loop);
   }
 
